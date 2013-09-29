@@ -1,12 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
+        <loc>http://dschatzberg.github.io/blog/2013/09/28/composition-and-the-ebbrt-project/</loc>
+        <lastmod>2013-09-29T15:41:31-04:00</lastmod>
+    </url>
+    <url>
         <loc>http://dschatzberg.github.io/</loc>
-        <lastmod>2013-09-28T13:08:00-04:00</lastmod>
+        <lastmod>2013-09-29T15:41:31-04:00</lastmod>
     </url>
     <url>
         <loc>http://dschatzberg.github.io/blog/archives/</loc>
-        <lastmod>2013-09-28T13:08:00-04:00</lastmod>
+        <lastmod>2013-09-29T15:41:31-04:00</lastmod>
     </url>
     <url>
         <loc>http://dschatzberg.github.io/robots.txt</loc>

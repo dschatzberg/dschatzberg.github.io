@@ -4,7 +4,7 @@
   <title><![CDATA[Collecting My Thoughts]]></title>
   <link href="http://dschatzberg.github.io/atom.xml" rel="self"/>
   <link href="http://dschatzberg.github.io/"/>
-  <updated>2013-09-28T13:08:12-04:00</updated>
+  <updated>2013-09-29T15:41:51-04:00</updated>
   <id>http://dschatzberg.github.io/</id>
   <author>
     <name><![CDATA[Dan Schatzberg]]></name>
@@ -12,5 +12,133 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Composition and the EbbRT Project]]></title>
+    <link href="http://dschatzberg.github.io/blog/2013/09/28/composition-and-the-ebbrt-project/"/>
+    <updated>2013-09-28T13:17:00-04:00</updated>
+    <id>http://dschatzberg.github.io/blog/2013/09/28/composition-and-the-ebbrt-project</id>
+    <content type="html"><![CDATA[<p>Our current operating systems grew out of an environment where
+multiple users with multiple applications shared a single machine. The
+kernel&rsquo;s role was first and foremost to securely multiplex the shared
+resources (disks, memory, processors). This has largely remained
+true. However, due to advances in virtualization, networking, and
+datacenter computing, an increasingly important class of applications
+are dedicated to one or more machines.</p>
+
+<p>Many of these applications are ill-served by existing operating
+systems. The requirement of secure multiplexing of resources is
+removed and so a significant portion of the operating system causes
+unnecessary overhead. This is by no means a unique observation; both
+<a href="http://www.xenproject.org/developers/teams/mirage-os.html">Mirage OS</a>
+and <a href="http://osv.io/">OSv</a> are new operating systems designed for cloud
+applications running on virtualized infrastructure.</p>
+
+<p>So I can take a cloud application and port it to one of these two
+systems and I suspect for many applications I would see a performance
+improvement. Thats not to say that it would be worth doing for all
+applications; there is still effort involved in porting a working
+application. One would have to estimate the return on investment in
+programmer effort to decide if such an effort it worthwhile.</p>
+
+<p>This leads me to wonder, what is the best performance I could acheive
+for a particular application and how much effort would be required to
+acheive such performance. Pretty clearly in a perfect world each such
+application would be deployed with an application-specific system. So
+why is this not the way these applications are constructed?</p>
+
+<p>At least one primary answer is the effort in building a freestanding
+binary (I&rsquo;ll reuse this terminology to refer to an application without
+an underlying OS) makes it generally not worth the gains. What would
+change this balance?</p>
+
+<p>1) The gains improve. The operating system is involved most in I/O
+heavy workloads. Compute heavy workloads do not involve crossing
+protection boundaries. Classically, I/O heavy workloads have been
+dominated by hardware costs (network latency, disk seek latency,
+etc.). However, improvements in networking (Infiniband, switches,
+etc.) and storage (NVRAM, flash, etc.) have lowered the hardware costs
+to the point where the software costs are not an insignificant factor.</p>
+
+<p>2) The effort to build a freestanding binary is reduced. Building an
+Operating System is a lot of work. Fortunately convergence in hardware
+has made some issues such as drivers less of a factor. Still, for a
+Linux application, the amount of code necessary to replace Linux for
+that application might be much more code than the rest of the
+application.</p>
+
+<p>So I argue that the gains one would get, at least for a class of
+applications (typically datacenter/cloud applications), are
+increasing. Both the previous systems recognize this and target these
+applications. So how do we reduce the effort needed to build a
+freestanding binary? Well clearly there are pieces of functionality
+which are common amongst many applications. But rather than extracting
+these out and calling them an operating system (or runtime). We should
+seek to build a library of freestanding components which can be used
+to construct freestanding binaries (be they applications, runtimes or
+operating systems).</p>
+
+<p>One could argue this was the goal of
+<a href="http://www.cs.utah.edu/flux/oskit/">OSKit</a>, a relatively old project
+which sought to lower the barrier to entry to building operating
+systems by providing components of systems software. However, OSKit
+made a significant mistake. They used a relatively heavy-weight
+mechanism to interface between components. Each OSKit interface is
+specified using Component Object Model (COM) to create a binary
+interface. This performance cost of interfacing creates a tension. At
+any point a programmer must decide whether decomposing a piece of
+software is worth the performance hit. This requires</p>
+
+<p>1) Estimating the performance hit of the interface. Doing so is very
+difficult and impossible to do accurately without the set of
+applications which intend to run on the system</p>
+
+<p>2) Estimating the value of decomposing the software. Will the new
+component be reusable? For which systems and applications?</p>
+
+<p>Making this judgement is impossible without restricting the
+applications that intend to use the components. And so, OSKit was
+forced to be a library of components for a specific kind of operating
+systems which fit well with the particular coarse grain decomposition
+that was chosen by the OSKit developers.</p>
+
+<p>Can we avoid the tradeoff between decomposition and performance?
+Ideally we could write components of software and when composed the
+generated code is as good as hand optimized code written without
+decomposition. Indeed, a technique called
+<a href="http://en.wikipedia.org/wiki/Metaprogramming">metaprogramming</a> allows
+programmers to write code that generates code.</p>
+
+<p>This is a well known technique even if the name is not
+commonplace. For example,
+<a href="http://savannah.nongnu.org/projects/lwip/">lwIP</a> is a lightweight
+TCP/IP stack written in C that can be embedded in applications and
+systems. The system requires some form of memory allocation and so
+instead of calling <code>malloc</code> and requiring the need to link with a
+function called <code>malloc</code>, lwIP called <code>mem_malloc</code> which is a macro
+that is defined by the user. This allows the memory allocation of lwIP
+to be controlled according to the demands of the system or application
+that uses it. Because it is defined as a macro, it is just as good as
+if the code had been written directly in place and the compiler can
+inline function calls as usual.</p>
+
+<p>Equivalently in C++, templates can be used to perform
+<a href="http://en.wikipedia.org/wiki/Generic_programming">generic programming</a>
+which allows code to be written without specifying concrete
+types. This technique was used in the STL and its use greatly
+influenced the C++ standard library. With these techniques composition
+is no longer at odds with performance.</p>
+
+<p>That is not to say that there won&rsquo;t be orthogonal sets of
+components. The type of components one might use to build an
+application targeting a small virtual machine might be largely
+orthogonal to those used to build an application targeting a
+distributed, multicore, datacenter.</p>
+
+<p>That largely summarizes my thoughts on the current research question
+at hand. Next time I will discuss concretely how this research
+question can be explored and evaluated.</p>
+]]></content>
+  </entry>
   
 </feed>
